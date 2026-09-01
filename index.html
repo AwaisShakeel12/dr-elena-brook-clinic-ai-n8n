@@ -264,6 +264,8 @@ button{cursor:pointer}
   </form>
 </main>
 
+
+
 <script>
 const messages  = document.getElementById('messages');
 const typing    = document.getElementById('typing');
@@ -273,139 +275,403 @@ const sendBtn   = document.getElementById('sendBtn');
 const sidebar   = document.getElementById('sidebar');
 const overlay   = document.getElementById('overlay');
 
+
+// =====================================================
+// CHAT SESSION ID
+// =====================================================
+// Create one unique ID for this browser/user.
+// It stays the same even if the page is refreshed.
+let sessionId = localStorage.getItem('clinic_session_id');
+
+if (!sessionId) {
+  sessionId = crypto.randomUUID();
+  localStorage.setItem('clinic_session_id', sessionId);
+}
+
+
+// =====================================================
+// MOBILE SIDEBAR
+// =====================================================
+
 document.getElementById('menuBtn').addEventListener('click', () => {
-  sidebar.classList.add('open'); overlay.classList.add('active');
-});
-overlay.addEventListener('click', () => {
-  sidebar.classList.remove('open'); overlay.classList.remove('active');
+  sidebar.classList.add('open');
+  overlay.classList.add('active');
 });
 
+overlay.addEventListener('click', () => {
+  sidebar.classList.remove('open');
+  overlay.classList.remove('active');
+});
+
+
+// =====================================================
+// TIME
+// =====================================================
+
 function nowTime(){
-  return new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+  return new Date().toLocaleTimeString([], {
+    hour: '2-digit',
+    minute: '2-digit'
+  });
 }
-function scrollDown(){ messages.scrollTop = messages.scrollHeight; }
+
+
+// =====================================================
+// SCROLL
+// =====================================================
+
+function scrollDown(){
+  messages.scrollTop = messages.scrollHeight;
+}
+
+
+// =====================================================
+// ROBOT IMAGE
+// =====================================================
 
 function robotImg(cls){
   return `<img class="${cls}" src="robot.png" onerror="robotFallback(this)" alt="Medi">`;
 }
 
+
+// =====================================================
+// WELCOME MESSAGE
+// =====================================================
+
 function buildWelcome(){
+
   const day = document.createElement('div');
   day.className = 'day-chip';
   day.textContent = 'Today';
+
   messages.appendChild(day);
+
 
   const w = document.createElement('div');
   w.className = 'welcome';
+
   w.innerHTML = `
     ${robotImg('robot-lg')}
+
     <div class="welcome-txt">
       <h2>Hello! I'm Medi 👋</h2>
-      <p>Your virtual clinic receptionist. I can book appointments, check doctor availability, and answer questions about clinic hours & services.</p>
+
+      <p>
+        Your virtual clinic receptionist.
+        I can book appointments, check doctor availability,
+        and answer questions about clinic hours & services.
+      </p>
     </div>
+
     <div class="chips">
-      <button type="button" class="chip" data-q="I would like to book an appointment."><i class="fa-solid fa-calendar-plus"></i> Book appointment</button>
-      <button type="button" class="chip" data-q="What are the clinic hours?"><i class="fa-solid fa-clock"></i> Clinic hours</button>
-      <button type="button" class="chip" data-q="Do you offer online video consultations?"><i class="fa-solid fa-laptop-medical"></i> Online consult</button>
-      <button type="button" class="chip" data-q="What services does the clinic offer?"><i class="fa-solid fa-stethoscope"></i> Services</button>
-    </div>`;
-  w.querySelectorAll('.chip').forEach(b => b.addEventListener('click', () => send(b.dataset.q)));
+
+      <button
+        type="button"
+        class="chip"
+        data-q="I would like to book an appointment."
+      >
+        <i class="fa-solid fa-calendar-plus"></i>
+        Book appointment
+      </button>
+
+      <button
+        type="button"
+        class="chip"
+        data-q="What are the clinic hours?"
+      >
+        <i class="fa-solid fa-clock"></i>
+        Clinic hours
+      </button>
+
+      <button
+        type="button"
+        class="chip"
+        data-q="Do you offer online video consultations?"
+      >
+        <i class="fa-solid fa-laptop-medical"></i>
+        Online consult
+      </button>
+
+      <button
+        type="button"
+        class="chip"
+        data-q="What services does the clinic offer?"
+      >
+        <i class="fa-solid fa-stethoscope"></i>
+        Services
+      </button>
+
+    </div>
+  `;
+
+
+  w.querySelectorAll('.chip').forEach(button => {
+
+    button.addEventListener('click', () => {
+      send(button.dataset.q);
+    });
+
+  });
+
+
   messages.appendChild(w);
+
   scrollDown();
 }
+
+
+// =====================================================
+// ADD MESSAGE TO CHAT
+// =====================================================
 
 function addMessage(text, sender){
+
   const row = document.createElement('div');
   row.className = 'msg-row ' + sender;
+
+
   const col = document.createElement('div');
   col.className = 'msg-col';
+
+
   const bubble = document.createElement('div');
   bubble.className = 'bubble';
+
   bubble.textContent = text;
+
+
   const time = document.createElement('span');
   time.className = 'msg-time';
+
   time.textContent = nowTime();
-  col.appendChild(bubble); col.appendChild(time);
+
+
+  col.appendChild(bubble);
+  col.appendChild(time);
+
   row.appendChild(col);
+
   messages.appendChild(row);
+
   scrollDown();
 }
+
+
+// =====================================================
+// ERROR MESSAGE
+// =====================================================
 
 function showError(message){
+
   const row = document.createElement('div');
   row.className = 'msg-row ai';
+
+
   const col = document.createElement('div');
   col.className = 'msg-col';
+
+
   const bubble = document.createElement('div');
   bubble.className = 'bubble error-bubble';
-  bubble.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> ${message}`;
+
+  bubble.innerHTML =
+    `<i class="fa-solid fa-triangle-exclamation"></i> ${message}`;
+
+
   const time = document.createElement('span');
   time.className = 'msg-time';
+
   time.textContent = nowTime();
-  col.appendChild(bubble); col.appendChild(time);
+
+
+  col.appendChild(bubble);
+  col.appendChild(time);
+
   row.appendChild(col);
+
   messages.appendChild(row);
+
   scrollDown();
 }
 
+
+// =====================================================
+// NEW SESSION
+// =====================================================
+
 function clearChat(){
+
+  // Generate a completely new conversation ID
+  sessionId = crypto.randomUUID();
+
+  // Save it for this browser
+  localStorage.setItem(
+    'clinic_session_id',
+    sessionId
+  );
+
+
+  // Clear visible chat
   messages.innerHTML = '';
+
   buildWelcome();
 }
 
+
+// =====================================================
+// SEND MESSAGE
+// =====================================================
+
 async function send(text){
+
   if(!text || !text.trim()) return;
+
+
+  // Show user message immediately
   addMessage(text, 'user');
+
+
+  // Clear input
   input.value = '';
+
+
+  // Show typing indicator
   typing.style.display = 'block';
+
+
+  // Disable controls while waiting
   sendBtn.disabled = true;
   input.disabled = true;
+
+
   scrollDown();
 
-  try{
-    // ===== MATCHES YOUR PYTHON /api/send ENDPOINT =====
-    const res = await fetch('/api/send', {
-  method: 'POST',
-  headers: {'Content-Type':'application/json'},
-  body: JSON.stringify({
-    message: text,
 
-    // User information
-    name: localStorage.getItem('user_name') || '',
-    email: localStorage.getItem('user_email') || '',
-    phone: localStorage.getItem('user_phone') || ''
-  })
-});
+  try{
+
+    // =================================================
+    // SEND TO FASTAPI
+    // =================================================
+
+    const res = await fetch('/api/send', {
+
+      method: 'POST',
+
+      headers: {
+        'Content-Type': 'application/json'
+      },
+
+      body: JSON.stringify({
+
+        // User's message
+        message: text,
+
+        // IMPORTANT:
+        // Same session ID is sent with every message
+        sessionId: sessionId,
+
+        // Optional user information
+        name: localStorage.getItem('user_name') || '',
+        email: localStorage.getItem('user_email') || '',
+        phone: localStorage.getItem('user_phone') || ''
+
+      })
+
+    });
+
+
+    // Hide typing indicator
     typing.style.display = 'none';
+
+
+    // =================================================
+    // HANDLE HTTP ERRORS
+    // =================================================
+
     if(!res.ok){
-      let errMsg = 'Connection issue (HTTP ' + res.status + ')';
-      try {
+
+      let errMsg =
+        'Connection issue (HTTP ' + res.status + ')';
+
+
+      try{
+
         const errData = await res.json();
-        if (errData.detail) errMsg = errData.detail;
-      } catch(e){}
+
+        if(errData.detail){
+          errMsg = errData.detail;
+        }
+
+      }catch(e){}
+
+
       showError(errMsg);
+
       return;
     }
+
+
+    // =================================================
+    // READ n8n / FASTAPI RESPONSE
+    // =================================================
+
     const data = await res.json();
-    addMessage(data.response, 'ai');
+
+
+    // Display AI response
+    addMessage(
+      data.response,
+      'ai'
+    );
+
+
   }catch(e){
+
     typing.style.display = 'none';
-    showError('Could not reach the clinic server. Please check your connection.');
-  } finally {
+
+    console.error('Chat error:', e);
+
+    showError(
+      'Could not reach the clinic server. Please check your connection.'
+    );
+
+
+  }finally{
+
+    // Re-enable controls
     sendBtn.disabled = false;
     input.disabled = false;
+
     input.focus();
+
   }
+
 }
 
+
+// =====================================================
+// FORM SUBMIT
+// =====================================================
+
 form.addEventListener('submit', (e) => {
+
   e.preventDefault();
+
   const text = input.value.trim();
+
   send(text);
+
 });
 
+
+// =====================================================
+// INITIALIZE CHAT
+// =====================================================
+
 buildWelcome();
+
 input.focus();
+
 </script>
 </body>
 </html>
