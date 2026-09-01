@@ -365,10 +365,17 @@ async function send(text){
   try{
     // ===== MATCHES YOUR PYTHON /api/send ENDPOINT =====
     const res = await fetch('/api/send', {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ message: text })
-    });
+  method: 'POST',
+  headers: {'Content-Type':'application/json'},
+  body: JSON.stringify({
+    message: text,
+
+    // User information
+    name: localStorage.getItem('user_name') || '',
+    email: localStorage.getItem('user_email') || '',
+    phone: localStorage.getItem('user_phone') || ''
+  })
+});
     typing.style.display = 'none';
     if(!res.ok){
       let errMsg = 'Connection issue (HTTP ' + res.status + ')';
